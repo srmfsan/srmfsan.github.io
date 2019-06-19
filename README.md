@@ -1,2 +1,6 @@
 # lecture
-FPGA recture
+FPGA 
+
+
+[docs]
+
