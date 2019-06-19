@@ -10,9 +10,15 @@ srmfsan
   
 jobs
 
-  * Engineer 
-     * image processing development including deep-learning techniques
-
+  * present
+    * Electrical Engineer (FPGA and PC based system)
+    * image processing development including deep-learning techniques
+  * past
+    * Hardware AV1 Encoder (FPGA)
+    * Hardware AVC Decoder (FPGA/ASIC)
+    * Video CODEC analyzer software
+    * Hyper-Low-Delay video transmission system
+ 
 skills
 
   * FPGA
