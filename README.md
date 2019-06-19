@@ -1,6 +1,7 @@
-# lecture
-FPGA 
+srmfsan
+=======
 
+[profile](profile.md)
 
-[docs](docs/readme.md)
+[FPGA](fpga/index.md)
 
