@@ -2,5 +2,5 @@
 FPGA 
 
 
-[docs]
+[docs](docs/readme.md)
 
