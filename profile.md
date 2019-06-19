@@ -18,7 +18,10 @@ jobs
     * Hardware AVC Decoder (FPGA/ASIC)
     * Video CODEC analyzer software
     * Hyper-Low-Delay video transmission system
- 
+    * Android camera system
+    * Real-time audio loudness cheker
+    * Video quality inspection system
+
 skills
 
   * FPGA
