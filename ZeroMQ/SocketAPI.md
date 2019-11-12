@@ -192,30 +192,53 @@ If this limit has been reached the socket enters an exceptional state and depend
 
 Underneath the brown paper wrapping of ZeroMQ’s socket API lies the world of messaging patterns. ZeroMQ patterns are implemented by pairs of sockets with matching types.
 
+ZeroMQのソケットAPIの茶色の紙の包装の下には、メッセージングパターンの世界があります。 ZeroMQパターンは、一致するタイプのソケットのペアによって実装されます。
+
 The built-in core ZeroMQ patterns are:
+
+組み込みのコアZeroMQパターンは次のとおりです。
 
 * Request-reply, which connects a set of clients to a set of services. This is a remote procedure call and task distribution pattern.
 * Pub-sub, which connects a set of publishers to a set of subscribers. This is a data distribution pattern.
 * Pipeline, which connects nodes in a fan-out/fan-in pattern that can have multiple steps and loops. This is a parallel task distribution and collection pattern.
 * Exclusive pair, which connects two sockets exclusively. This is a pattern for connecting two threads in a process, not to be confused with “normal” pairs of sockets.
 
+* Request-reply、これはクライアント群をサービス群に接続します。これは、リモートプロシージャコールおよびタスク分散パターンです。
+* Pub-sub、これはパブリッシャー群をサブスクライバー群に接続します。これはデータ分散パターンです。
+* Pipeline、これは複数のステップとループを持つことができるファンアウト/ファンインパターンでノードを接続します。これは、並列タスクの分散および収集パターンです。
+* Exclusive pair、これは2つのソケットを排他的に接続します。これは、プロセス内の2つのスレッドを接続するためのパターンです。「通常の」ソケットペアと混同しないでください。
+
 There are more ZeroMQ patterns that are still in draft state:
+
+他にも、ドラフト状態のZeroMQパターンがさらにあります。
 
 * Client-server, which allows a single ZeroMQ server talk to one or more ZeroMQ clients. The client always starts the conversation, after which either peer can send messages asynchronously, to the other.
 
 * Radio-dish, which used for one-to-many distribution of data from a single publisher to multiple subscribers in a fan out fashion.
 
+* Client-server、これは単一のZeroMQサーバーが1つ以上のZeroMQクライアントと通信できます。会話を開始するのは常にクライアントで。その後、どちらかのピアがもう一方に非同期にメッセージを送信できます。
+* Radio-dish、これは単一のパブリッシャーから複数のサブスクライバーへのファンアウト方式でのデータの1対多の配信に使用します。
+
 ## Request-reply pattern
 
 The request-reply pattern is intended for service-oriented architectures of various kinds. It comes in two basic flavors: synchronous (REQ and REP socket types), and asynchronous socket types (DEALER and ROUTER socket types), which may be mixed in various ways.
 
+request-replyパターンは、さまざまな種類のサービス指向アーキテクチャを対象としています。 2つの基本的なフレーバーが存在します。すなわち、同期（REQおよびREPソケットタイプ）と非同期ソケットタイプ（DEALERおよびROUTERソケットタイプ）があり、これらはさまざまな方法で混合できます。
+
 The request-reply pattern is formally defined by RFC 28/REQREP.
+
+request-replyパターンは、RFC 28/REQREPで形式的に定義されています。
+
 
 ### REQ socket
 
 A REQ socket is used by a client to send requests to and receive replies from a service. This socket type allows only an alternating sequence of sends and subsequent receive calls. A REQ socket maybe connected to any number of REP or ROUTER sockets. Each request sent is round-robined among all connected services, and each reply received is matched with the last issued request. It is designed for simple request-reply models where reliability against failing peers is not an issue.
 
+クライアントは、REQソケットを使用して、サービスに要求を送信し、サービスから応答を受信します。 このソケットタイプは、送信とそれに後続する受信呼び出しの交互のシーケンスのみを許可します。 REQソケットは、任意の数のREPまたはROUTERソケットに接続できます。 送信された各リクエストは、接続されているすべてのサービス間でラウンドロビンされ、受信された各応答は最後に発行されたリクエストと照合されます。 これは、障害のあるピアに対する信頼性が問題にならない単純なrequest-replyモデル用に設計されています。
+
 If no services are available, then any send operation on the socket will block until at least one service becomes available. The REQ socket will not discard any messages.
+
+利用可能なサービスがない場合、少なくとも1つのサービスが利用可能になるまで、ソケットに対する送信操作はブロックされます。 REQソケットはメッセージを破棄しません。
 
 **Summary of characteristics:**
 	
@@ -230,6 +253,8 @@ Action in mute state 	Block
 
 A REP socket is used by a service to receive requests from and send replies to a client. This socket type allows only an alternating sequence of receive and subsequent send calls. Each request received is fair-queued from among all clients, and each reply sent is routed to the client that issued the last request. If the original requester does not exist any more the reply is silently discarded.
 
+REPソケットは、クライアントから要求を受信し、クライアントに応答を送信するためにサービスによって使用されます。 このソケットタイプは、受信呼び出しとそれに後続する送信呼び出しの交互のシーケンスのみを許可します。 受信した各要求は、すべてのクライアント間で公平キューに入れられ、送信された各応答は、最後の要求を発行したクライアントにルーティングされます。 元のリクエスターが既に存在しない場合、応答は無言で破棄されます。
+
 **Summary of characteristics:**
 	
 Compatible peer sockets 	REQ, DEALER
@@ -242,9 +267,15 @@ Incoming routing strategy 	Last peer
 
 The DEALER socket type talks to a set of anonymous peers, sending and receiving messages using round-robin algorithms. It is reliable, insofar as it does not drop messages. DEALER works as an asynchronous replacement for REQ, for clients that talk to REP or ROUTER servers. Message received by a DEALER are fair-queued from all connected peers.
 
+DEALERソケットタイプは、匿名ピア群と通信し、ラウンドロビンアルゴリズムを使用してメッセージを送受信します。 メッセージをドロップしない限り、信頼できます。 DEALERは、REPまたはROUTERサーバーと通信するクライアントのREQの非同期置換として機能します。 DEALERが受信したメッセージは、接続されているすべてのピアから公平キューされます。
+
 When a DEALER socket enters the mute state due to having reached the high water mark for all peers, or if there are no peers at all, then any send operation on the socket will block until the mute state ends or at least one peer becomes available for sending; messages are not discarded.
 
+すべてのピアの最高水位標に達したためにDEALERソケットがミュート状態になった場合、またはピアがまったくない場合は、ミュート状態が終了するか、少なくとも1つのピアが送信使用可能になるまで、ソケットに対する送信操作がブロックされます。すなわち、メッセージは破棄されません。
+
 When a DEALER socket is connected to a REP socket message sent must contain an empty frame as first part of the message (the delimiter), followed by one or more body parts.
+
+DEALERソケットがREPソケットに接続される場合、送信されるメッセージには、メッセージの最初の部分（区切り文字）として空のフレームが含まれ、その後に1つ以上の本文部分が続く必要があります。
 
 **Summary of characteristics:**
 	
@@ -259,11 +290,19 @@ Action in mute state 	Block
 
 The ROUTER socket type talks to a set of peers, using explicit addressing so that each outgoing message is sent to a specific peer connection. ROUTER works as an asynchronous replacement for REP, and is often used as the basis for servers that talk to DEALER clients.
 
+ROUTERソケットタイプは、各発信メッセージが特定のピア接続に送信されるように、明示的なアドレス指定を使用して、ピア群と通信します。 ROUTERはREPの非同期置換として機能し、多くの場合、DEALERクライアントと通信するサーバーの基盤として使用されます。
+
 When receiving messages a ROUTER socket will prepend a message part containing the routing id of the originating peer to the message before passing it to the application. Messages received are fair-queued from among all connected peers. When sending messages a ROUTER socket will remove the first part of the message and use it to determine the routing id of the peer the message shall be routed to. If the peer does not exist anymore, or has never existed, the message shall be silently discarded.
+
+メッセージを受信する場合、ROUTERソケットは、発信元ピアのルーティングIDを含むメッセージ部分をメッセージに付加してから、アプリケーションに渡します。受信したメッセージは、接続されているすべてのピア間で公平キューに入れられます。メッセージを送信するとき、ROUTERソケットはメッセージの最初の部分を削除し、それを使用してメッセージのルーティング先となるピアのルーティングIDを決定します。ピアがもう存在しない、または存在したことがない場合、メッセージは無言で破棄されます。
 
 When a ROUTER socket enters the mute state due to having reached the high water mark for all peers, then any messages sent to the socket will be dropped until the mute state ends. Likewise, any messages routed to a peer for which the individual high water mark has been reached will also be dropped.
 
+すべてのピアの最高水準点に達したためにROUTERソケットがミュート状態になると、ミュート状態が終了するまでソケットに送信されたメッセージはすべてドロップされます。同様に、個々の最高水準点に到達したピアにルーティングされたメッセージもドロップされます。
+
 When a REQ socket is connected to a ROUTER socket, in addition to the routing id of the originating peer each message received shall contain an empty delimiter message part. Hence, the entire structure of each received message as seen by the application becomes: one or more routing id parts, delimiter part, one or more body parts. When sending replies to a REQ socket the application must include the delimiter part.
+
+REQソケットがROUTERソケットに接続されている場合、発信ピアのルーティングIDに加えて、受信した各メッセージには空の区切りメッセージ部分が含まれます。したがって、アプリケーションから見た各受信メッセージの構造全体は、1つ以上のルーティングID部分、区切り文字部分、1つ以上の本文部分になります。 REQソケットに応答を送信する場合、アプリケーションには区切り文字部分を含める必要があります。
 
 **Summary of characteristics:**
 	
@@ -278,20 +317,31 @@ Action in mute state 	Drop (see text)
 
 The publish-subscribe pattern is used for one-to-many distribution of data from a single publisher to multiple subscribers in a fan out fashion.
 
+publish-subscribeパターンは、単一のパブリッシャーから複数のサブスクライバーへのファンアウト方式でのデータの1対多の配信に使用されます。
+
 The publish-subscribe pattern is formally defined by RFC 29/PUBSUB.
 
+publish-subscribeパターンは、RFC 29/PUBSUBで正式に定義されています。
+
 ZeroMQ comes with support for Pub/Sub by way of four socket types:
+
+ZeroMQには、4つのソケットタイプによるPub/Subのサポートがあります。
 
 * PUB Socket Type
 * XPUB Socket Type
 * SUB Socket Type
 * XSUB Socket Type
 
+
 ### Topics
 
 ZeroMQ uses multipart messages to convey topic information. Topics are expressed as an array of bytes, though you may use a string and with suitable text encoding.
 
+ZeroMQは、マルチパートメッセージを使用してトピック情報を伝えます。 トピックはバイトの配列として表されますが、適切なテキストエンコーディング文字列を使用することもできます。
+
 A publisher must include the topic in the message’s’ first frame, prior to the message payload. For example, to publish a status message to subscribers of the status topic:
+
+publisherは、メッセージのペイロードの前に、メッセージ群の最初のフレームにトピックを含める必要があります。 たとえば、ステータストピックのsubscriberにステータスメッセージをpublishするには、次のようにします。
 
 ```C
 //  Send a message on the 'status' topic
@@ -301,6 +351,8 @@ zmq_send (pub, "All is well", 11, 0);
 
 Subscribers specify which topics they are interested in by setting the ZMQ_SUBSCRIBE option on the subscriber socket:
 
+subscriberは、subscriberソケットでZMQ_SUBSCRIBEオプションを設定することで、関心のあるトピックを指定します。
+
 ```C
 //  Subscribe to the 'status' topic
 zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "status", strlen ("status"));
@@ -308,9 +360,15 @@ zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "status", strlen ("status"));
 
 A subscriber socket can have multiple subscription filters.
 
+subscriberソケットは、複数の購読フィルタを持つことができます。
+
 A message’s topic is compared against subscribers’ subscription topics using a prefix check.
 
+メッセージのトピックは、前方一致を使用して、subscriberの購読トピックと比較されます。
+
 That is, a subscriber who subscribed to topic would receive messages with topics:
+
+つまり、topicを購読しているsubscriberは、以下のようなトピックを含むメッセージを受信します。
 
 * topic
 * topic/subtopic
@@ -318,16 +376,24 @@ That is, a subscriber who subscribed to topic would receive messages with topics
 
 However it would not receive messages with topics:
 
+ただし、以下のようなトピックを含むメッセージは受信しません。
+
 * topi
 * TOPIC (remember, it’s a byte-wise comparison)
 
 A consequence of this prefix matching behaviour is that you can receive all published messages by subscribing with an empty topic string.
 
+この前方一致動作により、空のトピック文字列で購読することで、公開されたすべてのメッセージを受信できます。
+
 ### PUB socket
 
 A PUB socket is used by a publisher to distribute data. Messages sent are distributed in a fan out fashion to all connected peers. This socket type is not able to receive any messages.
 
+PUBソケットは、publisherがデータを配布するために使用します。 送信されたメッセージは、接続されたすべてのピアにファンアウト方式で配信されます。 このソケットタイプはメッセージを受信できません。
+
 When a PUB socket enters the mute state due to having reached the high water mark for a subscriber, then any messages that would be sent to the subscriber in question shall instead be dropped until the mute state ends. The send function does never block for this socket type.
+
+subscriberの最高水位標に達したためにPUBソケットがミュート状態になると、代わりに、問題のsubscriberに送信されるメッセージは、ミュート状態が終了するまでドロップされます。 送信関数は、このソケットタイプに対してブロックしません。
 
 **Summary of characteristics:**
 	
@@ -342,6 +408,8 @@ Action in mute state 	Drop
 
 A SUB socket is used by a subscriber to subscribe to data distributed by a publisher. Initially a SUB socket is not subscribed to any messages. The send function is not implemented for this socket type.
 
+SUBソケットは、publisherによって配信されるデータを購読するためにsubscriberによって使用されます。 最初は、SUBソケットはどのメッセージにも購読されていません。 このソケットタイプには送信機能は実装されていません。
+
 **Summary of characteristics:**
 	
 Compatible peer sockets 	PUB, XPUB
@@ -353,6 +421,8 @@ Outgoing routing strategy 	N/A
 ### XPUB socket
 
 Same as PUB except that you can receive subscriptions from the peers in form of incoming messages. Subscription message is a byte 1 (for subscriptions) or byte 0 (for unsubscriptions) followed by the subscription body. Messages without a sub/unsub prefix are also received, but have no effect on subscription status.
+
+着信メッセージの形式でピアから購読を受信できることを除いて、PUBと同じです。 購読メッセージは、バイト1（購読している場合）またはバイト0（購読していない場合）の後に購読本文が続きます。 sub/unsubプレフィックスのないメッセージも受信されますが、購読ステータスには影響しません。
 
 **Summary of characteristics:**
 	
@@ -366,6 +436,8 @@ Action in mute state 	Drop
 ### XSUB socket
 
 Same as SUB except that you subscribe by sending subscription messages to the socket. Subscription message is a byte 1 (for subscriptions) or byte 0 (for unsubscriptions) followed by the subscription body. Messages without a sub/unsub prefix may also be sent, but have no effect on subscription status.
+
+購読メッセージをソケットに送信して購読することを除き、SUBと同じです。 購読メッセージは、バイト1（購読している場合）またはバイト0（購読していない場合）の後に購読本文が続きます。 sub/unsubプレフィックスのないメッセージも送信できますが、購読ステータスには影響しません。
 
 **Summary of characteristics:**
 	
