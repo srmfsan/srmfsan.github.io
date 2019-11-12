@@ -3,6 +3,8 @@ Socket API
 
 Sockets are the de facto standard API for network programming. That’s why ZeroMQ presents a familiar socket-based API. One thing that make ZeroMQ especially tasty to developers is that it uses different socket types to implement any arbitrary messaging pattern. Furthermore ZeroMQ sockets provide a clean abstraction over the underlying network protocol which hides the complexity of those protocols and makes switching between them very easy.
 
+ソケットは、ネットワークプログラミングの事実上の標準APIです。それが、ZeroMQが使い慣れたソケットベースのAPIを提供する理由です。 開発者にとってのZeroMQの魅力の1つは、様々なソケットタイプを使用して任意のメッセージングパターンを実装ができることです。さらに、ZeroMQソケットは、基盤となるネットワークプロトコル上でクリーンな抽象化を提供するため、これらのプロトコルの複雑さが隠され、プロトコル間の切り替えが非常に簡単になります。
+
 <!-- TOC -->
 
 - [Key differences to conventional sockets](#key-differences-to-conventional-sockets)
@@ -41,22 +43,37 @@ Sockets are the de facto standard API for network programming. That’s why Zero
 
 Generally speaking, conventional sockets present a synchronous interface to either connection-oriented reliable byte streams (SOCK_STREAM), or connection-less unreliable datagrams (SOCK_DGRAM). In comparison, ZeroMQ sockets present an abstraction of an asynchronous message queue, with the exact queueing semantics depending on the socket type in use. Where conventional sockets transfer streams of bytes or discrete datagrams, ZeroMQ sockets transfer discrete messages.
 
+一般的に、従来のソケットは、コネクション型で信頼性の高いバイトストリーム（SOCK_STREAM）、またはコネクションレスで信頼性の低いデータグラム（SOCK_DGRAM）に対する同期インターフェースを提供します。これに対して、ZeroMQソケットは非同期メッセージキューの抽象化を提供し、使用中のソケットタイプに応じた正確なキューイングセマンティクスを提供します。従来のソケットがバイトストリームまたは個別のデータグラムを転送するのに対し、ZeroMQソケットは個別のメッセージを転送します。
+
 ZeroMQ sockets being asynchronous means that the timings of the physical connection setup and tear down, reconnect and effective delivery are transparent to the user and organized by ZeroMQ itself. Further, messages may be queued in the event that a peer is unavailable to receive them.
 
+ZeroMQソケットが非同期であるということは、物理的な接続のセットアップと切断、再接続、および効果的な配信のタイミングがユーザーに対して透過的であり、ZeroMQ自体によって構成されることを意味します。さらに、ピアがメッセージを受信できない場合、メッセージはキューに入れられる場合があります。
+
 Conventional sockets allow only strict one-to-one (two peers), many-to-one (many clients, one server), or in some cases one-to-many (multicast) relationships. With the exception of PAIR sockets, ZeroMQ sockets may be connected to multiple endpoints, while simultaneously accepting incoming connections from multiple endpoints bound to the socket, thus allowing many-to-many relationships.
+
+従来のソケットでは、厳密な1対1（2つのピア）、多対1（多くのクライアント、1つのサーバー）、または場合によっては1対多（マルチキャスト）の関係のみが許可されます。 PAIRソケットを除き、ZeroMQソケットは複数のエンドポイントに接続でき、同時にソケットにバインドされた複数のエンドポイントからの着信接続を受け入れ、多対多の関係を可能にします。
 
 # Socket lifetime
 
 ZeroMQ sockets have a life in four parts, just like BSD sockets:
 
-* Creating and destroying sockets, which go together to form a * karmic circle of socket life
-* Configuring sockets by setting options on them and checking them * if necessary
-* Plugging sockets into the network topology by creating ZeroMQ * connections to and from them.
+ZeroMQソケットは、BSDソケットと同様に4つの部分に分かれています。
+
+* Creating and destroying sockets, which go together to form a karmic circle of socket life
+* Configuring sockets by setting options on them and checking them if necessary
+* Plugging sockets into the network topology by creating ZeroMQ connections to and from them.
 * Using the sockets to carry data by writing and receiving messages on them.
+
+* ソケットを作成および破棄します。これらは一緒になって、ソケットライフのカルマの輪を形成します。
+* ソケットにオプションを設定しソケットを構成し、必要に応じてチェックする。
+* ZeroMQコネクションを作成してソケットをネットワークトポロジに接続します。
+* ソケットを使用して、メッセージを書き込んだり受け取ったりしてデータを運ぶ。
 
 # First example
 
 So let’s start with some code, the “Hello world” example (of course).
+
+それではコードから始めましょう、（もちろん）「Hello world」の例で。
 
 ```C
 //  Hello World sever
@@ -85,6 +102,8 @@ int main (void)
 ```
 
 The server creates a socket of type reply (you will read more about Request-reply pattern later), binds it to port 5555 and then waits for messages. You can also see that we have zero configuration, we are just sending strings.
+
+サーバーは、replyタイプのソケットを作成し（要求と応答のパターンについては後で詳しく説明します）、ポート5555にバインドしてからメッセージを待ちます。 また、ゼロ設定で、単に文字列を送信しています。
 
 ```C
 //  Hello World client
@@ -116,33 +135,58 @@ int main (void)
 
 The client creates a socket of type request, connects and starts sending messages.
 
+クライアントは、要求タイプのソケットを作成し、接続してメッセージの送信を開始します。
+
 Both the send and receive methods are blocking (by default). For the receive it is simple: if there are no messages the method will block. For sending it is more complicated and depends on the socket type. For request sockets, if the high watermark is reached or no peer is connected the method will block.
+
+送信メソッドと受信メソッドの両方は（デフォルトで）ブロッキングです。 受信の場合は簡単です。メッセージがない場合、メソッドはブロックします。 送信に関しては、より複雑で、ソケットのタイプに依存します。 requestソケットの場合、最高水準点に達するか、ピアが接続されていない場合、メソッドはブロックします。
 
 # Bind vs Connect
 
 With ZeroMQ sockets it doesn’t matter who binds and who connects. In the above you may have noticed that the server used Bind while the client used Connect. Why is this, and what is the difference?
 
+ZeroMQソケットでは、誰がバインドし、誰が接続してもかまいません。上記で、サーバーがバインドを使用し、クライアントが接続を使用していることに気付いたかもしれません。これはなぜですか、違いは何ですか？
+
 ZeroMQ creates queues per underlying connection. If your socket is connected to three peer sockets, then there are three messages queues behind the scenes.
+
+ZeroMQは、基礎となる接続ごとにキューを作成します。ソケットが3つのピアソケットに接続されている場合、背後に3つのメッセージキューがあります。
 
 With Bind, you allow peers to connect to you, thus you don’t know how many peers there will be in the future and you cannot create the queues in advance. Instead, queues are created as individual peers connect to the bound socket.
 
+バインドを使用すると、ピアからの接続を許可するため、将来ピアの数がわからないため、事前にキューを作成することはできません。代わりに、個々のピアがバインドされたソケットに接続すると、キューが作成されます。
+
 With Connect, ZeroMQ knows that there’s going to be at least a single peer and thus it can create a single queue immediately. This applies to all socket types except ROUTER, where queues are only created after the peer we connect to has acknowledge our connection.
 
+Connectを使用すると、ZeroMQは少なくとも1つのピアが存在することを認識するため、単一のキューをすぐに作成できます。これは、接続先のピアが接続を確認した後にのみキューが作成されるROUTERを除くすべてのソケットタイプに適用されます。
+
 Consequently, when sending a message to bound socket with no peers, or a ROUTER with no live connections, there’s no queue to store the message to.
+
+そのため、ピアのないバインドされたソケット、または生きた接続のないルーターにメッセージを送信する場合、メッセージを保存するキューはありません。
+
 
 ## When should I use bind and when connect?
 
 As a general rule use bind from the most stable points in your architecture, and use connect from dynamic components with volatile endpoints. For request/reply, the service provider might be the point where you bind and the clients are using connect. Just like plain old TCP.
 
+原則として、アーキテクチャ内の最も安定したポイントからのバインドを使用し、揮発性エンドポイントを持つ動的コンポーネントからの接続を使用します。 request/replyの場合、サービスプロバイダーはバインドするポイントであり、クライアントは接続を使用している可能性があります。 昔ながらのTCPのように。
+
 If you can’t figure out which parts are more stable (i.e. peer-to-peer), consider a stable device in the middle, which all sides can connect to.
 
+どの部分がより安定しているかがわからない場合（つまり、ピアツーピア）は、中間にすべての側が接続できる安定したデバイスを検討してください。
+
 You can read more about this at the ZeroMQ FAQ under the “Why do I see different behavior when I bind a socket versus connect a socket?” section.
+
+これについて詳しくは、ZeroMQ FAQの「ソケットをバインドする場合とソケットを接続する場合の動作が異なるのはなぜですか？」セクションをご覧ください。
 
 # High-Water-Mark
 
 The high water mark is a hard limit on the maximum number of outstanding messages ZeroMQ is queuing in memory for any single peer that the specified socket is communicating with.
 
+最高水準点は、指定されたソケットが通信している単一のピアに対して、ZeroMQがメモリ内でキューイングしている未処理のメッセージの最大数に対するハードリミットです。
+
 If this limit has been reached the socket enters an exceptional state and depending on the socket type, ZeroMQ will take appropriate action such as blocking or dropping sent messages. Refer to the individual socket descriptions below for details on the exact action taken for each socket type.
+
+この制限に達すると、ソケットは例外状態になり、ソケットの種類に応じて、ZeroMQは送信されたメッセージのブロックやドロップなどの適切なアクションを実行します。 各ソケットタイプに対して実行される正確なアクションの詳細については、以下の個々のソケットの説明を参照してください。
 
 # Messaging Patterns
 
