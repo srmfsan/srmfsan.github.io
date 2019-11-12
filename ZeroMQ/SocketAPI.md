@@ -448,13 +448,21 @@ Incoming routing strategy 	Fair-queued
 Outgoing routing strategy 	N/A
 Action in mute state 	Drop
 
+
+
 ## Pipeline pattern
 
 The pipeline pattern is intended for task distribution, typically in a multi-stage pipeline where one or a few nodes push work to many workers, and they in turn push results to one or a few collectors. The pattern is mostly reliable insofar as it will not discard messages unless a node disconnects unexpectedly. It is scalable in that nodes can join at any time.
 
+パイプラインパターンはタスク分散を目的としています。通常マルチステージパイプラインで、1つまたは少数のノードが多くのワーカーに作業をプッシュし、結果を1つまたは少数のコレクターにプッシュします。 ノードが予期せず切断されない限り、パターンはメッセージを破棄しない限り、ほとんど信頼できます。 ノードはいつでも参加できるという点でスケーラブルです。
+
 The pipeline pattern is formally defined by RFC 30/PIPELINE.
 
+パイプラインパターンは、RFC 30 / PIPELINEで正式に定義されています。
+
 ZeroMQ comes with support for pipelining by way of two socket types:
+
+ZeroMQには、2つのソケットタイプによるパイプラインのサポートをしています。
 
 * PUSH Socket Type
 * PULL Socket Type
@@ -463,7 +471,11 @@ ZeroMQ comes with support for pipelining by way of two socket types:
 
 The PUSH socket type talks to a set of anonymous PULL peers, sending messages using a round-robin algorithm. The receive operation is not implemented for this socket type.
 
+PUSHソケットタイプは、匿名PULLピア群と通信し、ラウンドロビンアルゴリズムを使用してメッセージを送信します。 受信操作は、このソケットタイプには実装されていません。
+
 When a PUSH socket enters the mute state due to having reached the high water mark for all downstream nodes, or if there are no downstream nodes at all, then any send operations on the socket will block until the mute state ends or at least one downstream node becomes available for sending; messages are not discarded.
+
+すべてのダウンストリームノードの最高水位標に達したためにPUSHソケットがミュート状態になった場合、またはダウンストリームノードがまったくない場合は、ミュート状態が終了するか少なくとも1つのダウンストリームが送信可能になるまでソケットの送信操作がブロックされます。 メッセージは破棄されません。
 
 **Summary of characteristics:**
 	
@@ -478,7 +490,11 @@ Action in mute state 	Block
 
 The PULL socket type talks to a set of anonymous PUSH peers, receiving messages using a fair-queuing algorithm.
 
+PULLソケットタイプは、匿名PUSHピア群と通信し、フェアキューイングアルゴリズムを使用してメッセージを受信します。
+
 The send operation is not implemented for this socket type.
+
+このソケットタイプには送信操作は実装されていません。
 
 **Summary of characteristics:**
 	
@@ -493,20 +509,29 @@ Action in mute state 	Block
 
 PAIR is not a general-purpose socket but is intended for specific use cases where the two peers are architecturally stable. This usually limits PAIR to use within a single process, for inter-thread communication.
 
+PAIRは汎用ソケットではありませんが、2つのピアがアーキテクチャ的に安定している特定のユースケースを対象としています。 これは通常、スレッド間通信のために、PAIRが単一プロセス内で使用することを制限します。
+
 The exclusive pair pattern is formally defined by 31/EXPAIR.
+
+排他的ペアパターンは、31/EXPAIRによって正式に定義されています。
 
 ### PAIR socket
 
 A socket of type PAIR can only be connected to a single peer at any one time. No message routing or filtering is performed on messages sent over a PAIR socket.
 
+タイプPAIRのソケットは、一度に1つのピアにのみ接続できます。 PAIRソケットを介して送信されたメッセージでは、メッセージのルーティングまたはフィルタリングは実行されません。
+
 When a PAIR socket enters the mute state due to having reached the high water mark for the connected peer, or if no peer is connected, then any send operations on the socket will block until the peer becomes available for sending; messages are not discarded.
 
+接続されたピアの最高水準点に達したためにPAIRソケットがミュート状態になった場合、またはピアが接続されていない場合、ピアで送信が可能になるまでソケットに対する送信操作はブロックされます。 メッセージは破棄されません。
+
 While PAIR sockets can be used over transports other than inproc, their inability to auto-reconnect coupled with the fact new incoming connections will be terminated while any previous connections (including ones in a closing state) exist makes them unsuitable for TCP in most cases.
+
+PAIRソケットはinproc以外のトランスポートで使用できますが、自動再接続ができないため、新しい着信接続は終了しますが、直前の接続（終了状態の接続を含む）が存在する場合、ほとんどの場合TCPには不適切です。
 
 ## Client-server pattern
 
 > Note: This pattern is still in draft state and thus might not be supported by the zeromq library you’re using!
-
 
 The client-server pattern is used to allow a single SERVER server talk to one or more CLIENT clients. The client always starts the conversation, after which either peer can send messages asynchronously, to the other.
 
